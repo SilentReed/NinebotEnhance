@@ -64,7 +64,7 @@ final class DashboardLayoutTests {
         DashboardLayout portrait=DashboardLayout.parse(M5P.replace("\"dimensionWidth\": 848.0","\"dimensionWidth\": 240.0").replace("\"dimensionHeight\": 480.0","\"dimensionHeight\": 320.0")
                 .replace("\"codecWidth\": 848.0","\"codecWidth\": 240.0").replace("\"codecHeight\": 480.0","\"codecHeight\": 320.0"));
         check(portrait.frameWidth()==240&&portrait.frameHeight()==320,"a 240 x 320 half-screen configuration is read instead of rejected");
-        DisplaySettings small=new DisplaySettings(848,480,600,480,180,0xff242424,true,0xffe6eaee,true).withFrame(240,320);
+        DisplaySettings small=new DisplaySettings(848,500,600,480,180,0xff242424,true,0xffe6eaee,true,SidebarLayout.HALF_SCREEN_TOP_INSET,0).withFrame(240,320);
         DisplaySettings shapeDefault=new DisplaySettings(848,480,600,480,180,0xff242424,true,0xffe6eaee,false);
         check(shapeDefault.withFrame(240,320).virtualWidth==240&&shapeDefault.withFrame(240,320).virtualHeight==300&&shapeDefault.withFrame(240,320).dpi==160&&shapeDefault.withFrame(848,480).virtualWidth==640&&shapeDefault.withFrame(848,480).virtualHeight==440&&shapeDefault.withFrame(848,480).dpi==160&&!shapeDefault.withFrame(848,480).virtualOverride,"without the override the virtual display takes the shape defaults");
         check(DisplaySettings.read((k,f)->k.equals("virtual_override")?1:k.equals("layout_version")?2:f).virtualOverride&&!DisplaySettings.defaults().virtualOverride,"the override flag round-trips");
@@ -90,7 +90,7 @@ final class DashboardLayoutTests {
         check(Math.abs(seven.volume().left()+108)<1e-4&&Math.abs(seven.volume().right()+76)<1e-4&&Math.abs(seven.volume().right()-seven.referenceLeft()+12-58)<1e-4,"the seven-inch volume bar sits at the frame's left edge and slides in over its own width");
         DisplaySettings sevenSettings=DisplaySettings.defaults().withFrame(1024,600);
         check(sevenSettings.width==1024&&sevenSettings.height==600&&sevenSettings.virtualWidth==760&&sevenSettings.virtualHeight==496&&sevenSettings.dpi==160&&sevenSettings.bottomInset==56&&sevenSettings.contentTop()==48&&sevenSettings.contentBottom()==544,"the seven-inch frame places the default app at (0,48) above the band");
-        DisplaySettings sevenOverride=new DisplaySettings(1024,608,800,560,180,0xff242424,true,0xffe6eaee,true).withFrame(1024,600);
+        DisplaySettings sevenOverride=new DisplaySettings(1024,664,800,560,180,0xff242424,true,0xffe6eaee,true,48,56).withFrame(1024,600);
         check(sevenOverride.virtualWidth==800&&sevenOverride.virtualHeight==496&&sevenOverride.dpi==180&&sevenOverride.bottomInset==56&&sevenOverride.height==600,"an override on the seven-inch frame keeps its width and density but is capped between the strips");
         check(sevenSettings.withFrame(848,480).bottomInset==0&&sevenSettings.withFrame(848,480).virtualHeight==440&&DisplaySettings.defaultVirtual(1024,600)[1]==496&&DisplaySettings.defaultVirtual(240,320)[0]==240,"going back to the five-inch frame drops the bottom strip");
         DashboardLayout sevenLayout=DashboardLayout.parse("{\"codecWidth\":1024,\"codecHeight\":608,\"layout\":{\"baseMap\":{\"frame\":{\"x\":0,\"y\":0,\"width\":1024,\"height\":608},\"uiStyle\":{\"boundRects\":[{\"x\":760,\"y\":457,\"width\":264,\"height\":151}]}}}}");

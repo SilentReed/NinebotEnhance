@@ -9,6 +9,8 @@ package dev.ichinomiya.ninebotenhance.core;
  */
 public final class DisplaySettings {
     public final int width,height,virtualWidth,virtualHeight,dpi,backgroundColor,lightBackgroundColor;
+    /** Rows kept free above the app so the dashboard's own top overlay stays visible; the app's first row is at least {@code topInset}. */
+    public final int topInset;
     /** Rows kept free under the app for the dashboard's own bottom overlay; the app's first row is {@code height - bottomInset - virtualHeight}. */
     public final int bottomInset;
     public final boolean keepPhoneDpi;
@@ -30,18 +32,19 @@ public final class DisplaySettings {
     public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi){this(width,height,virtualWidth,virtualHeight,dpi,backgroundColor,keepPhoneDpi,DEFAULT_LIGHT_BACKGROUND_COLOR);}
     /** {@code backgroundColor} fills the frame around the app in the dark dashboard theme, {@code lightBackgroundColor} in the light one. */
     public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor){this(width,height,virtualWidth,virtualHeight,dpi,backgroundColor,keepPhoneDpi,lightBackgroundColor,false);}
-    public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor,boolean virtualOverride){this(width,height,virtualWidth,virtualHeight,dpi,backgroundColor,keepPhoneDpi,lightBackgroundColor,virtualOverride,0);}
-    public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor,boolean virtualOverride,int bottomInset){
+    public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor,boolean virtualOverride){this(width,height,virtualWidth,virtualHeight,dpi,backgroundColor,keepPhoneDpi,lightBackgroundColor,virtualOverride,0,0);}
+    public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor,boolean virtualOverride,int bottomInset){this(width,height,virtualWidth,virtualHeight,dpi,backgroundColor,keepPhoneDpi,lightBackgroundColor,virtualOverride,0,bottomInset);}
+    public DisplaySettings(int width,int height,int virtualWidth,int virtualHeight,int dpi,int backgroundColor,boolean keepPhoneDpi,int lightBackgroundColor,boolean virtualOverride,int topInset,int bottomInset){
         if(width<DashboardLayout.MIN_SIDE||height<DashboardLayout.MIN_SIDE||width>DashboardLayout.MAX_SIDE||height>DashboardLayout.MAX_SIDE||(width&1)!=0||(height&1)!=0||(long)width*height>2073600)
             throw new IllegalArgumentException("整帧宽高需为 160–1920 的偶数，总像素不超过 1920×1080。");
         if(virtualWidth<DashboardLayout.MIN_SIDE||virtualHeight<DashboardLayout.MIN_SIDE||virtualWidth>width||virtualHeight>height||(virtualWidth&1)!=0||(virtualHeight&1)!=0)
             throw new IllegalArgumentException("虚拟屏宽高需为不小于 160 的偶数，且不能超过整帧宽高。");
         if(dpi<100||dpi>480||Math.min(virtualWidth,virtualHeight)*160L/dpi<160)
             throw new IllegalArgumentException("DPI 为 100–480，虚拟屏最短边至少 160 dp。");
-        if(bottomInset<0||(long)virtualHeight+bottomInset>height)
-            throw new IllegalArgumentException("虚拟屏高度加底部预留不能超过整帧高度。");
+        if(topInset<0||bottomInset<0||(long)virtualHeight+topInset+bottomInset>height)
+            throw new IllegalArgumentException("虚拟屏高度加上下预留不能超过整帧高度。");
         BandColor.requireOpaque(backgroundColor);BandColor.requireOpaque(lightBackgroundColor);
-        this.bottomInset=bottomInset;this.width=width;this.height=height;this.virtualWidth=virtualWidth;this.virtualHeight=virtualHeight;this.dpi=dpi;this.backgroundColor=backgroundColor;this.keepPhoneDpi=keepPhoneDpi;this.lightBackgroundColor=lightBackgroundColor;this.virtualOverride=virtualOverride;
+        this.topInset=topInset;this.bottomInset=bottomInset;this.width=width;this.height=height;this.virtualWidth=virtualWidth;this.virtualHeight=virtualHeight;this.dpi=dpi;this.backgroundColor=backgroundColor;this.keepPhoneDpi=keepPhoneDpi;this.lightBackgroundColor=lightBackgroundColor;this.virtualOverride=virtualOverride;
     }
     /** Same dp layout at the phone's density; null when the option is off, the density is unknown or already equal. */
     public RenderPlan renderPlan(int phoneDpi){
@@ -65,7 +68,7 @@ public final class DisplaySettings {
         }
         return new DisplaySettings(values.get("width",DEFAULT_WIDTH),values.get("height",DEFAULT_HEIGHT),
                 values.get("virtual_width",DEFAULT_VIRTUAL_WIDTH),values.get("virtual_height",DEFAULT_VIRTUAL_HEIGHT),
-                values.get("dpi",DEFAULT_DPI),values.get("background_color",DEFAULT_BACKGROUND_COLOR),values.get("keep_phone_dpi",DEFAULT_KEEP_PHONE_DPI?1:0)!=0,values.get("light_background_color",DEFAULT_LIGHT_BACKGROUND_COLOR),values.get("virtual_override",0)!=0,values.get("bottom_inset",0));
+                values.get("dpi",DEFAULT_DPI),values.get("background_color",DEFAULT_BACKGROUND_COLOR),values.get("keep_phone_dpi",DEFAULT_KEEP_PHONE_DPI?1:0)!=0,values.get("light_background_color",DEFAULT_LIGHT_BACKGROUND_COLOR),values.get("virtual_override",0)!=0,values.get("top_inset",0),values.get("bottom_inset",0));
     }
     /**
      * Same settings inside the frame the cast configuration prescribes: the frame's dashboard profile supplies the defaults and the
@@ -73,16 +76,17 @@ public final class DisplaySettings {
      */
     public DisplaySettings withFrame(int frameWidth,int frameHeight){
         int w=frameWidth&~1,h=frameHeight&~1;DashboardProfile profile=DashboardProfile.of(w,h);
-        int bottom=profile.bottomInset(),maxHeight=h-profile.topInset()-bottom;
+        int top=virtualOverride?topInset:profile.topInset(),bottom=virtualOverride?bottomInset:profile.bottomInset();
+        int maxHeight=h-top-bottom;
         int vw=Math.min(virtualOverride?virtualWidth:profile.appWidth(),w)&~1,vh=Math.min(virtualOverride?virtualHeight:profile.appHeight(),maxHeight)&~1,d=virtualOverride?dpi:profile.appDpi();
-        if(w==width&&h==height&&vw==virtualWidth&&vh==virtualHeight&&d==dpi&&bottom==bottomInset)return this;
-        try { return new DisplaySettings(w,h,vw,vh,d,backgroundColor,keepPhoneDpi,lightBackgroundColor,virtualOverride,bottom); }
+        if(w==width&&h==height&&vw==virtualWidth&&vh==virtualHeight&&d==dpi&&top==topInset&&bottom==bottomInset)return this;
+        try { return new DisplaySettings(w,h,vw,vh,d,backgroundColor,keepPhoneDpi,lightBackgroundColor,virtualOverride,top,bottom); }
         catch(IllegalArgumentException e) { return this; }
     }
     /** The app's first row in the frame, and the row just below its last one. */
     public int contentTop(){return height-bottomInset-virtualHeight;}
     public int contentBottom(){return height-bottomInset;}
     public int background(boolean dark){return dark?backgroundColor:lightBackgroundColor;}
-    public String label(){return "整帧 "+width+" × "+height+"，虚拟屏 "+virtualWidth+" × "+virtualHeight+"，"+dpi+" DPI"+(keepPhoneDpi?"（保持手机 DPI）":"")+(bottomInset>0?"，底部预留 "+bottomInset:"")+"，背景 "+BandColor.hex(backgroundColor)+" / "+BandColor.hex(lightBackgroundColor);}
+    public String label(){return "整帧 "+width+" × "+height+"，虚拟屏 "+virtualWidth+" × "+virtualHeight+"，"+dpi+" DPI"+(keepPhoneDpi?"（保持手机 DPI）":"")+(topInset>0?"，顶部预留 "+topInset:"")+(bottomInset>0?"，底部预留 "+bottomInset:"")+"，背景 "+BandColor.hex(backgroundColor)+" / "+BandColor.hex(lightBackgroundColor);}
     public static String shellQuote(String value) { return "'" + value.replace("'", "'\\''") + "'"; }
 }

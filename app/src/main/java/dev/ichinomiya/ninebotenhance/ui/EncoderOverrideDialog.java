@@ -58,6 +58,10 @@ public final class EncoderOverrideDialog {
         EditText virtualHeight=field(activity,theme,virtualRow,"高",cached.virtualOverride?cached.virtualHeight:defaults[1]);
         EditText dpi=field(activity,theme,virtualRow,"DPI",cached.virtualOverride?cached.dpi:defaults[2]);
         virtualBlock.addView(virtualRow,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout insetsRow=new LinearLayout(activity);insetsRow.setGravity(Gravity.CENTER_VERTICAL);insetsRow.setPadding(0,gap,0,0);
+        EditText topInset=field(activity,theme,insetsRow,"顶部预留",cached.topInset);
+        EditText bottomInset=field(activity,theme,insetsRow,"底部预留",cached.bottomInset);
+        virtualBlock.addView(insetsRow,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout colours=new LinearLayout(activity);colours.setGravity(Gravity.CENTER_VERTICAL);colours.setPadding(0,gap,0,0);
         BandColorButton dark=colour(activity,theme,colours,"深色背景",cached.backgroundColor),light=colour(activity,theme,colours,"浅色背景",cached.lightBackgroundColor);
         content.addView(colours,new LinearLayout.LayoutParams(-1,-2));
@@ -69,7 +73,7 @@ public final class EncoderOverrideDialog {
         fps.setOnCheckedChangeListener((b,checked)->fpsBlock.setVisibility(checked?View.VISIBLE:View.GONE));
         frame.setOnCheckedChangeListener((b,checked)->frameBlock.setVisibility(checked?View.VISIBLE:View.GONE));
         virtual.setOnCheckedChangeListener((b,checked)->virtualBlock.setVisibility(checked?View.VISIBLE:View.GONE));
-        for(View v:new View[]{virtual,virtualWidth,virtualHeight,dpi,dark,light,keepDpi})v.setEnabled(idle);
+        for(View v:new View[]{virtual,virtualWidth,virtualHeight,dpi,topInset,bottomInset,dark,light,keepDpi})v.setEnabled(idle);
         ScrollView scroll=new ScrollView(activity);scroll.addView(content);
         TextView title=new TextView(activity);title.setText("设置覆盖");title.setTextSize(20);title.setTextColor(theme.text);title.setPadding(pad,pad,pad,pad/2);
         AlertDialog dialog=new AlertDialog.Builder(activity).setCustomTitle(title).setView(scroll).setNegativeButton("关闭",null).setPositiveButton("保存",null).create();
@@ -89,7 +93,7 @@ public final class EncoderOverrideDialog {
             DisplaySettings next;
             try{
                 next=new DisplaySettings(base.width,base.height,over?number(virtualWidth):base.virtualWidth,over?number(virtualHeight):base.virtualHeight,over?number(dpi):base.dpi,
-                        dark.color(),keepDpi.isChecked(),light.color(),over,0);
+                        dark.color(),keepDpi.isChecked(),light.color(),over,number(topInset),number(bottomInset));
             }catch(IllegalArgumentException e){ErrorDialog.show(activity,reference,e.getMessage());return;}
             frames.saveSettings(next,frames.cachedApp(),error->{if(error!=null)ErrorDialog.show(activity,reference,"保存失败",error);});
             dialog.dismiss();

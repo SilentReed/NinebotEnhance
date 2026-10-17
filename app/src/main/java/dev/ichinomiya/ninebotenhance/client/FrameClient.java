@@ -1089,7 +1089,7 @@ public final class FrameClient {
             if (context != null) context.getSharedPreferences("dev.ichinomiya.ninebotenhance.cached_display", Context.MODE_PRIVATE).edit()
                     .putInt("width",value.width).putInt("height",value.height).putInt("dpi",value.dpi)
                     .putInt("layout_version",DisplaySettings.LAYOUT_VERSION).putInt("virtual_width",value.virtualWidth).putInt("virtual_height",value.virtualHeight)
-                    .putInt("background_color",value.backgroundColor).putInt("keep_phone_dpi",value.keepPhoneDpi?1:0).putInt("virtual_override",value.virtualOverride?1:0).putInt("light_background_color",value.lightBackgroundColor).putInt("bottom_inset",value.bottomInset).remove("top_inset").remove("top_color")
+                    .putInt("background_color",value.backgroundColor).putInt("keep_phone_dpi",value.keepPhoneDpi?1:0).putInt("virtual_override",value.virtualOverride?1:0).putInt("light_background_color",value.lightBackgroundColor).putInt("top_inset",value.topInset).putInt("bottom_inset",value.bottomInset).remove("top_color")
                     .putString(AppCatalog.SELECTED, selected).apply();
         } catch (RuntimeException e) { report("SETTINGS cache write " + Ipc.error(e)); }
     }
